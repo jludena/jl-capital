@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=yes">
+<title>JL CAPITAL — Research</title>
+<style>
+*{box-sizing:border-box}
+html,body{
+  margin:0;width:100%;height:100%;
+  background:#111;color:#fff;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+  overflow:hidden
+}
+.app{width:100%;height:100%;display:flex;flex-direction:column;background:#111}
+.top{
+  height:56px;display:flex;align-items:center;justify-content:center;gap:7px;
+  background:#050b10;border-bottom:1px solid #1c3444;padding:6px 8px;
+  flex:0 0 auto;z-index:20
+}
+button,select{
+  height:40px;background:#071723;color:#eef7fc;
+  border:1px solid #24516a;border-radius:7px;font-size:13px
+}
+button{width:42px;flex:0 0 auto}
+select{padding:0 8px}
+#companySel{min-width:150px;max-width:180px}
+#sel{min-width:210px;max-width:320px}
+.count{font-size:12px;color:#93a8b5;min-width:48px;text-align:center}
+.viewer{
+  position:relative;flex:1;min-height:0;
+  display:flex;align-items:center;justify-content:center;
+  background:#1a1a1a;overflow:hidden
+}
+.stage{
+  position:relative;
+  width:min(100vw,calc((100vh - 56px)*1.5));
+  aspect-ratio:3/2;
+  flex:0 0 auto
+}
+#slide{
+  display:block;width:100%;height:100%;
+  object-fit:contain;
+  user-select:none;-webkit-user-select:none;-webkit-user-drag:none
+}
+.hotspots{position:absolute;inset:0;pointer-events:none}
+.hot{
+  position:absolute;border:0;border-radius:0;background:transparent;
+  padding:0;margin:0;pointer-events:auto;cursor:pointer;
+  -webkit-tap-highlight-color:transparent
+}
+.hot:active,.hot.flash{
+  background:rgba(22,141,246,.22);
+  box-shadow:inset 0 -3px 0 #3ca7ff
+}
+.msg{
+  position:absolute;bottom:10px;left:50%;transform:translateX(-50%);
+  background:rgba(1,8,13,.9);border:1px solid #24485e;border-radius:6px;
+  padding:6px 10px;color:#d7e5ed;font-size:11px;opacity:0;
+  transition:.18s;pointer-events:none;z-index:30;white-space:nowrap
+}
+.msg.on{opacity:1}
+
+@media(max-width:700px){
+  .top{
+    height:102px;
+    gap:5px;
+    padding:6px 5px;
+    flex-wrap:wrap;
+    align-content:center;
+    justify-content:center
+  }
+  button{width:38px}
+  #companySel{
+    flex:0 0 calc(100% - 10px);
+    width:calc(100% - 10px);
+    min-width:0;
+    max-width:none;
+    height:38px;
+    font-size:12px
+  }
+  #sel{
+    min-width:0;
+    width:165px;
+    max-width:165px;
+    font-size:10px
+  }
+  .count{min-width:36px;font-size:10px}
+  .stage{width:min(100vw,calc((100vh - 102px)*1.5))}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <select id="companySel" aria-label="Empresa"></select>
+    <button id="prev" aria-label="Anterior">◀</button>
+    <select id="sel" aria-label="Sección"></select>
+    <span class="count" id="count"></span>
+    <button id="next" aria-label="Siguiente">▶</button>
+    <button id="full" aria-label="Pantalla completa">⛶</button>
+  </div>
+
+  <div class="viewer" id="viewer">
+    <div class="stage">
+      <img id="slide" alt="">
+      <div class="hotspots" id="hotspots"></div>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div>
+</div>
+
+<script>
+const sectionDefs = [
+  {id:'summary',title:'Resumen General'},
+  {id:'business',title:'Business Score'},
+  {id:'entry',title:'Entry & Accumulation'},
+  {id:'portfolio',title:'Portfolio Fit'},
+  {id:'thesis',title:'Tesis de Inversión'},
+  {id:'monthly',title:'Revisión Mensual'},
+  {id:'chart',title:'Gráfico & Niveles'},
+  {id:'financials',title:'Estados Financieros'},
+  {id:'metrics',title:'Métricas Clave'},
+  {id:'brands',title:'Marcas & Negocio'},
+  {id:'research',title:'Research Interno'}
+];
+
+const companies = {
+  pepsico: {
+    label:'PepsiCo (PEP)',
+    title:'PepsiCo, Inc.',
+    files:[
+      '01_Resumen_General.jpg',
+      '02_Business_Score.jpg',
+      '03_Entry_Accumulation.jpg',
+      '04_Portfolio_Fit.jpg',
+      '05_Tesis_de_Inversion.jpg',
+      '06_Revision_Mensual.jpg',
+      '07_Grafico_y_Niveles.jpg',
+      '08_Estados_Financieros.jpg',
+      '09_Metricas_Clave.jpg',
+      '10_Marcas_y_Negocio.jpg',
+      '11_Research_Interno.jpg'
+    ],
+    hotspotMode:'left'
+  },
+  cummins: {
+    label:'Cummins (CMI)',
+    title:'Cummins Inc.',
+    folder:'',
+    files:[
+      '01_resumen_general.png',
+      '02_business_score.png',
+      '03_entry_accumulation.png',
+      '04_portfolio_fit.png',
+      '05_tesis_inversion.png',
+      '06_revision_mensual.png',
+      '07_grafico_niveles.png',
+      '08_estados_financieros.png',
+      '09_metricas_clave.png',
+      '10_marcas_negocio.png',
+      '11_research_interno.png'
+    ],
+    hotspotMode:'top'
+  }
+};
+
+let companyKey='pepsico';
+let i=0;
+
+const img=document.getElementById('slide');
+const sel=document.getElementById('sel');
+const companySel=document.getElementById('companySel');
+const count=document.getElementById('count');
+const msg=document.getElementById('msg');
+const hotspots=document.getElementById('hotspots');
+const prev=document.getElementById('prev');
+const next=document.getElementById('next');
+const full=document.getElementById('full');
+
+Object.entries(companies).forEach(([key,c])=>{
+  const o=document.createElement('option');
+  o.value=key;
+  o.textContent=c.label;
+  companySel.appendChild(o);
+});
+
+sectionDefs.forEach((s,n)=>{
+  const o=document.createElement('option');
+  o.value=n;
+  o.textContent=(n+1)+'. '+s.title;
+  sel.appendChild(o);
+});
+
+function toast(t){
+  msg.textContent=t;
+  msg.classList.add('on');
+  clearTimeout(window.__t);
+  window.__t=setTimeout(()=>msg.classList.remove('on'),700);
+}
+
+function currentCompany(){ return companies[companyKey]; }
+
+function currentSrc(){
+  const c=currentCompany();
+  return (c.folder||'') + c.files[i];
+}
+
+function buildHotspots(){
+  hotspots.innerHTML='';
+  const c=currentCompany();
+
+  if(c.hotspotMode==='left'){
+    // PepsiCo: menú vertical izquierdo integrado en la imagen.
+    const navTop=[22.8,26.8,30.8,34.8,38.8,42.8,46.8,50.8,54.8,58.8,62.8];
+    navTop.forEach((top,n)=>{
+      const b=document.createElement('button');
+      b.className='hot';
+      b.style.left='0%';
+      b.style.top=top+'%';
+      b.style.width='15.2%';
+      b.style.height='4.6%';
+      b.title=sectionDefs[n].title;
+      b.onclick=e=>hotClick(e,b,n);
+      hotspots.appendChild(b);
+    });
+  } else {
+    // Cummins: navegación horizontal superior integrada en las imágenes.
+    // Se deja libre el bloque "Anterior" y "Siguiente"; se activan sólo 01–11.
+    const startX=8.5;
+    const endX=91.0;
+    const w=(endX-startX)/11;
+    for(let n=0;n<11;n++){
+      const b=document.createElement('button');
+      b.className='hot';
+      b.style.left=(startX+n*w)+'%';
+      b.style.top='5.0%';
+      b.style.width=w+'%';
+      b.style.height='9.0%';
+      b.title=sectionDefs[n].title;
+      b.onclick=e=>hotClick(e,b,n);
+      hotspots.appendChild(b);
+    }
+  }
+}
+
+function hotClick(e,b,n){
+  e.preventDefault();
+  e.stopPropagation();
+  b.classList.add('flash');
+  setTimeout(()=>b.classList.remove('flash'),120);
+  show(n);
+}
+
+function updateUrl(){
+  const s=sectionDefs[i].id;
+  const url=new URL(location.href);
+  url.searchParams.set('empresa',companyKey);
+  url.hash=s;
+  history.replaceState(null,'',url.pathname+url.search+url.hash);
+}
+
+function show(n,quiet=false){
+  i=(n+sectionDefs.length)%sectionDefs.length;
+  img.src=currentSrc();
+  img.alt=currentCompany().title+' — '+sectionDefs[i].title;
+  sel.value=i;
+  count.textContent=(i+1)+' / '+sectionDefs.length;
+  updateUrl();
+  if(!quiet) toast(currentCompany().label+' · '+sectionDefs[i].title);
+}
+
+function setCompany(key,sectionIndex=0,quiet=false){
+  if(!companies[key]) key='pepsico';
+  companyKey=key;
+  companySel.value=key;
+  buildHotspots();
+  show(sectionIndex,quiet);
+}
+
+prev.onclick=()=>show(i-1);
+next.onclick=()=>show(i+1);
+sel.onchange=()=>show(+sel.value);
+companySel.onchange=()=>setCompany(companySel.value,0);
+
+full.onclick=async()=>{
+  const v=document.getElementById('viewer');
+  try{
+    if(!document.fullscreenElement) await v.requestFullscreen?.();
+    else await document.exitFullscreen?.();
+  }catch(e){}
+};
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowLeft') show(i-1);
+  if(e.key==='ArrowRight') show(i+1);
+});
+
+img.onerror=()=>{
+  toast('No se encontró: '+currentSrc());
+};
+
+const params=new URLSearchParams(location.search);
+const requestedCompany=params.get('empresa');
+const requestedHash=location.hash.slice(1);
+const requestedSection=sectionDefs.findIndex(x=>x.id===requestedHash);
+
+setCompany(
+  companies[requestedCompany] ? requestedCompany : 'pepsico',
+  requestedSection>=0 ? requestedSection : 0,
+  true
+);
+</script>
+</body>
+</html>
